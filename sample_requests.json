@@ -1,0 +1,45 @@
+[
+  {
+    "method": "GET",
+    "path": "/",
+    "form_fields": []
+  },
+  {
+    "method": "POST",
+    "path": "/",
+    "form_fields": [
+      {
+        "name": "demo",
+        "value": "1"
+      }
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/",
+    "form_fields": [
+      {
+        "name": "signups_text",
+        "value": "email,name,onboarding_completed\nann@acme.com,Ann,true\nbob@acme.com,Bob,false\ncy@acme.com,Cy,true"
+      },
+      {
+        "name": "payments_text",
+        "value": "email,plan,status\nann@acme.com,Pro,active"
+      }
+    ]
+  },
+  {
+    "method": "POST",
+    "path": "/",
+    "form_fields": [
+      {
+        "name": "signups_text",
+        "value": "email;name;signup_date\ndee@acme.com;Dee;2026-10-01\neli@acme.com;Eli;2026-10-03"
+      },
+      {
+        "name": "payments_text",
+        "value": "email,plan\ndee@acme.com,Pro"
+      }
+    ]
+  }
+]

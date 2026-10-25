@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ app_title }}{% endblock %}
+{% block head %}<link rel="stylesheet" href="{{ url_for('static', filename='funnel.css') }}">{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="card">
+    <h2>Upload your two exports</h2>
+    <p class="muted">Records are matched by email address in memory. Nothing you upload is stored on the server.</p>
+    <form method="post" enctype="multipart/form-data" class="upload-form">
+      <div class="grid">
+        <div>
+          <label for="signups_file"><strong>1. Signups CSV</strong></label>
+          <p class="muted small">Needs an <code>email</code> column. Optional: <code>name</code>, <code>signup_date</code>, <code>onboarding_completed</code> (true/false).</p>
+          <input type="file" id="signups_file" name="signups_file" accept=".csv,.txt,text/csv">
+          <textarea name="signups_text" rows="4" placeholder="...or paste CSV here&#10;email,name,onboarding_completed&#10;ann@acme.com,Ann,true"></textarea>
+        </div>
+        <div>
+          <label for="payments_file"><strong>2. Payments / subscriptions CSV</strong></label>
+          <p class="muted small">Needs an <code>email</code> column. Optional <code>status</code>: failed, refunded or canceled rows are not counted as paid.</p>
+          <input type="file" id="payments_file" name="payments_file" accept=".csv,.txt,text/csv">
+          <textarea name="payments_text" rows="4" placeholder="...or paste CSV here&#10;email,plan,status&#10;ann@acme.com,Pro,active"></textarea>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="submit" class="btn">Analyze funnel</button>
+        <button type="submit" name="demo" value="1" class="btn btn-secondary" formnovalidate>Try with sample data</button>
+      </div>
+    </form>
+  </div>
+
+  {% if result %}
+  <div class="card">
+    {% if is_demo %}<span class="badge">Sample data</span>{% endif %}
+    <h2>Funnel report</h2>
+    <div class="grid">
+      <div class="stat"><div class="muted">Signups</div><strong>{{ "{:,}".format(result.total) }}</strong></div>
+      <div class="stat"><div class="muted">Paying customers</div><strong>{{ "{:,}".format(result.paid_total) }}</strong></div>
+      <div class="stat"><div class="muted">Signup to paid</div><strong>{{ result.overall_pct }}%</strong></div>
+    </div>
+
+    <div class="funnel">
+      {% for s in result.stages %}
+      <div class="funnel-row">
+        <div class="funnel-head">
+          <span><strong>{{ s.label }}</strong></span>
+          <span>{{ "{:,}".format(s.count) }} {{ 'user' if s.count == 1 else 'users' }} · {{ s.pct_total }}% of signups</span>
+        </div>
+        <div class="funnel-track"><div class="funnel-bar" style="width: {{ [s.pct_total, 2]|max }}%"></div></div>
+        {% if s.drop_pct is not none %}
+        <div class="muted small">Drop-off from previous stage: <strong>{{ s.drop_pct }}%</strong> ({{ "{:,}".format(s.lost) }} {{ 'user' if s.lost == 1 else 'users' }} lost)</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if result.note %}<p class="muted small">{{ result.note }}</p>{% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Unconverted users for outreach</h2>
+    {% if result.unconverted_count == 0 %}
+      <p>Every signup in this data has a matching payment.</p>
+    {% else %}
+      <p class="muted">{{ "{:,}".format(result.unconverted_count) }} {{ 'user has' if result.unconverted_count == 1 else 'users have' }} not converted to paid.</p>
+      <p><a class="btn btn-secondary" download="unconverted-users.csv" href="{{ result.download }}">Download list as CSV</a></p>
+      <table class="responsive">
+        <thead><tr><th>Email</th><th>Name</th><th>Signed up</th><th>Segment</th></tr></thead>
+        <tbody>
+        {% for u in result.unconverted %}
+          <tr>
+            <td data-label="Email">{{ u.email }}</td>
+            <td data-label="Name">{{ u.name_disp }}</td>
+            <td data-label="Signed up">{{ u.date_disp }}</td>
+            <td data-label="Segment"><span class="badge">{{ u.segment }}</span></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if result.hidden_count %}
+      <p class="muted small">Showing the first 500 users. {{ "{:,}".format(result.hidden_count) }} more {{ 'user is' if result.hidden_count == 1 else 'users are' }} included in the CSV download.</p>
+      {% endif %}
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
